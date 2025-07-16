@@ -21,7 +21,7 @@ func main() {
 	todos := []Todo{}
 
 	// Root route
-	app.Get("/", func(c *fiber.Ctx) error {
+	app.Get("/api/todos", func(c *fiber.Ctx) error {
 		return c.Status(200).JSON(fiber.Map{"msg": "hello world"})
 	})
 
@@ -50,10 +50,11 @@ func main() {
 		return c.Status(201).JSON(todo)
 	})
 
-	// Update a todo
-	app.Patch("/api/todo/:id", func(c *fiber.Ctx) error {
+	app.Patch("/api/todos/:id", func(c *fiber.Ctx) error {
+
 		idParam := c.Params("id")
 		id, err := strconv.Atoi(idParam)
+
 		if err != nil {
 			return c.Status(400).JSON(fiber.Map{"error": "Invalid ID"})
 		}
@@ -66,6 +67,20 @@ func main() {
 		}
 
 		return c.Status(404).JSON(fiber.Map{"error": "Todo not found"})
+	})
+
+	app.Delete("/api/todos/:id", func(c *fiber.Ctx) error {
+		id := c.Params("id")
+
+		for i, todo := range todos {
+			if fmt.Sprint(todo.ID) == id {
+				todos = append(todos[:i], todos[i+1:]...)
+				return c.Status(200).JSON(fiber.Map{"success": true})
+			}
+		}
+
+		return c.Status(404).JSON(fiber.Map{"error": "Todo not found"})
+
 	})
 
 	log.Fatal(app.Listen(":4000"))
