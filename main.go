@@ -24,6 +24,8 @@ func main() {
 
 	})
 
+
+	// create a todo
 	app.Post("/api/todos", func(c *fiber.Ctx) error {
 		todo := &Todo{}
 
@@ -45,6 +47,19 @@ func main() {
 		fmt.Println(*p)
 
 		return c.Status(201).JSON(todo)
+	})
+
+	// update a todo
+	app.Patch("/api/todo/:id", func (c *fiber.Ctx) error {
+		id := c.Params("id")
+
+		for i, todo := range todos {
+			if fmt.Sprint(todo.ID) == id 
+				toods[i].Completed = true 
+				return c.Status(200).JSON(todos[i])
+		}
+
+		
 	})
 
 	log.Fatal(app.Listen(":4000"))
