@@ -22,7 +22,7 @@ func main() {
 
 	// Root route
 	app.Get("/api/todos", func(c *fiber.Ctx) error {
-		return c.Status(200).JSON(fiber.Map{"msg": "hello world"})
+		return c.Status(200).JSON(todos)
 	})
 
 	// Create a todo
