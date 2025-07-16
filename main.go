@@ -32,11 +32,17 @@ func main() {
 		}
 
 		if todo.Body == "" {
-			return c.Status(400).JSON(fiber.Map{"error": "Todo body is requred"})
+			return c.Status(400).JSON(fiber.Map{"error": "Todo body is requreid"})
 		}
 
 		todo.ID = len(todos) + 1
 		todos = append(todos, *todo)
+
+		var x int = 5
+		var p *int = &x
+
+		fmt.Println(p)
+		fmt.Println(*p)
 
 		return c.Status(201).JSON(todo)
 	})
