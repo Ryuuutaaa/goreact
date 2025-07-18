@@ -146,8 +146,17 @@ func main() {
 	app := fiber.New()
 
 	app.Get("/api/todos", getTodos)
-	app.Post("/api/todos", createTodo)
-	app.Patch("/api/todos", updateTodo)
-	app.Delete("/api/todos", deleteTodo)
+	// app.Post("/api/todos", createTodo)
+	// app.Patch("/api/todos", updateTodo)
+	// app.Delete("/api/todos", deleteTodo)
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "500"
+	}
+
+	log.Fatal(app.Listen("0.0.0.0" + port))
 
 }
+
+func getTodos(c *fiber.Ctx) error {}
