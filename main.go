@@ -158,7 +158,7 @@ func main() {
 		port = "500"
 	}
 
-	log.Fatal(app.Listen("0.0.0.0" + port))
+	log.Fatal(app.Listen("0.0.0.0:" + port))
 
 }
 
