@@ -134,6 +134,8 @@ func main() {
 		log.Fatal(err)
 	}
 
+	defer client.Disconnect(context.Background())
+
 	err = client.Ping(context.Background(), nil)
 
 	if err != nil {
@@ -168,6 +170,8 @@ func getTodos(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+
+	defer cursor.Close(context.Background())
 
 	for cursor.Next(context.Background()) {
 		var todo Todo
