@@ -114,7 +114,7 @@ import (
 var collection *mongo.Collection
 
 type Todo struct {
-	ID        primitive.ObjectID `json:"id" bson:"_id"`
+	ID        primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
 	Completed bool               `json:"completed"`
 	Body      string             `json:"body"`
 }
@@ -150,7 +150,7 @@ func main() {
 	app := fiber.New()
 
 	app.Get("/api/todos", getTodos)
-	// app.Post("/api/todos", createTodo)
+	app.Post("/api/todos", createTodo)
 	// app.Patch("/api/todos", updateTodo)
 	// app.Delete("/api/todos", deleteTodo)
 
