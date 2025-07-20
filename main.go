@@ -152,7 +152,7 @@ func main() {
 	app.Get("/api/todos", getTodos)
 	app.Post("/api/todos", createTodo)
 	app.Patch("/api/todos/:id", updateTodo)
-	app.Delete("/api/todos:id", deleteTodo)
+	app.Delete("/api/todos/:id", deleteTodo)
 
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -238,6 +238,10 @@ func deleteTodo(c *fiber.Ctx) error {
 
 	filter := bson.M{"_id": objectID}
 	collection.DeleteOne(context.Background(), filter)
+
+	// if err != nil {
+	// 	return err
+	// }
 
 	return c.Status(200).JSON(fiber.Map{"success": true})
 
