@@ -2,50 +2,64 @@ import { Button, Flex, Input, Text } from "@chakra-ui/react";
 import React, { useState } from "react";
 import { IoMdAdd } from "react-icons/io";
 
-const TodoForm = () => {
+interface Todo {
+  id: string;
+  body: string;
+  completed: boolean;
+}
+
+interface TodoFormProps {
+  onTodoCreated: (newTodo: Todo) => void;
+}
+
+
+const TodoForm: React.FC<TodoFormProps> = ({ onTodoCreated }) => {
   const [newTodo, setNewTodo] = useState("");
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false)
 
-  const createTodo = async (e: React.FormEvent) => {
-    e.preventDefault();
+const createTodo = async (e: React.FormEvent) => {
+  e.preventDefault();
 
-    if (!newTodo.trim()) {
-      setMessage("Todo tidak boleh kosong!");
-      return;
+  if (!newTodo.trim()) {
+    setMessage("Todo tidak boleh kosong!");
+    return;
+  }
+
+  setIsLoading(true);
+  setMessage("");
+
+  try {
+    const res = await fetch("http://localhost:5000/api/todos/create", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        body: newTodo,
+        completed: false,
+      }),
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.error || `HTTP error! status: ${res.status}`);
     }
 
-    setIsLoading(true);
-    setMessage("")
-
-    try {
-      const res = await fetch("http://localhost:5000/api/todos/create", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            body: newTodo,
-            completed: false,
-          }),
-        });
-
-
-      if (!res.ok){
-        const errorData = await res.json();
-        throw new Error(errorData.error || `HTTP error! status: ${res.status}`)
-      }
-
-
-      setMessage("Berhasil menambahkan todo");
-      setNewTodo("");
-     } catch (err) {
-      console.error("Error creating todo:", err);
-      setMessage(`Error: ${(err as Error).message}`);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    const createdTodo = await res.json();
+    setMessage("Berhasil menambahkan todo");
+    setNewTodo("");
+    
+    // Panggil callback untuk mengupdate state di parent component
+    onTodoCreated(createdTodo);
+    
+  } catch (err) {
+    console.error("Error creating todo:", err);
+    setMessage(`Error: ${(err as Error).message}`);
+  } finally {
+    setIsLoading(false);
+  }
+};
   return (
     <>
       <form onSubmit={createTodo}>

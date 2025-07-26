@@ -1,4 +1,4 @@
-import { Box, Flex, Spinner, Text, VStack, Badge } from "@chakra-ui/react";
+import { Box, Flex, Spinner, Text, VStack, Badge, Button } from "@chakra-ui/react";
 import React, { useEffect, useState } from "react";
 import TodoItem from "./TodoItem";
 
@@ -8,45 +8,46 @@ interface Todo {
   completed: boolean;
 }
 
-const TodoList: React.FC = () => {
-  const [todos, setTodos] = useState<Todo[]>([]);
+interface TodoListProps {
+  todos: Todo[];
+  setTodos: React.Dispatch<React.SetStateAction<Todo[]>>;
+}
+
+const TodoList: React.FC<TodoListProps> = ({ todos, setTodos }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>("");
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Fetch todos from backend
-const fetchTodos = async (showRefreshLoading = false) => {
-  try {
-    if (showRefreshLoading) {
-      setIsRefreshing(true);
-    } else {
-      setIsLoading(true);
+  const fetchTodos = async (showRefreshLoading = false) => {
+    try {
+      if (showRefreshLoading) {
+        setIsRefreshing(true);
+      } else {
+        setIsLoading(true);
+      }
+      setError("");
+      
+      const res = await fetch("http://localhost:5000/api/todos");
+      
+      if (!res.ok) {
+        throw new Error(`Failed to fetch: ${res.statusText}`);
+      }
+      
+      const data = await res.json();
+      setTodos(data || []);
+    } catch (error) {
+      console.error("Error fetching todos:", error);
+      setError(`Failed to connect to server. Please make sure backend is running. Details: ${(error as Error).message}`);
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
     }
-    setError("");
-    
-    const res = await fetch("http://localhost:5000/api/todos");
-    
-    if (!res.ok) {
-      throw new Error(`Failed to fetch: ${res.statusText}`);
-    }
-    
-    const data = await res.json();
-    setTodos(data || []);
-  } catch (error) {
-    console.error("Error fetching todos:", error);
-    setError(`Failed to connect to server. Please make sure backend is running. Details: ${(error as Error).message}`);
-  } finally {
-    setIsLoading(false);
-    setIsRefreshing(false);
-  }
-};
+  };
 
-  // Load todos on component mount
   useEffect(() => {
     fetchTodos(false);
   }, []);
 
-  // Handle todo update (mark as completed)
   const handleTodoUpdate = (id: string) => {
     setTodos(prevTodos =>
       prevTodos.map(todo =>
@@ -55,28 +56,19 @@ const fetchTodos = async (showRefreshLoading = false) => {
     );
   };
 
-  // Handle todo deletion
   const handleTodoDelete = (id: string) => {
     setTodos(prevTodos => prevTodos.filter(todo => todo.id !== id));
   };
 
-  // Add new todo to state (for parent component)
-  const addTodoToState = (newTodo: Todo) => {
-    setTodos(prevTodos => [...prevTodos, newTodo]);
-  };
-
-  // Optimized refresh function
   const refreshTodos = async () => {
-    if (isRefreshing || isLoading) return; // Prevent multiple simultaneous refreshes
+    if (isRefreshing || isLoading) return;
     await fetchTodos(true);
   };
 
-  // Calculate statistics
   const totalTodos = todos.length;
   const completedTodos = todos.filter(todo => todo.completed).length;
   const pendingTodos = totalTodos - completedTodos;
 
-  // Loading state
   if (isLoading && !isRefreshing) {
     return (
       <Box textAlign="center" py={8}>
@@ -88,7 +80,6 @@ const fetchTodos = async (showRefreshLoading = false) => {
     );
   }
 
-  // Error state
   if (error) {
     return (
       <Box textAlign="center" py={8}>
@@ -98,13 +89,21 @@ const fetchTodos = async (showRefreshLoading = false) => {
         <Text color="gray.600" fontSize="sm">
           {error}
         </Text>
+        <Button 
+          mt={4} 
+          colorScheme="blue" 
+          size="sm"
+          onClick={refreshTodos}
+          loading={isRefreshing}
+        >
+          Coba Lagi
+        </Button>
       </Box>
     );
   }
 
   return (
     <Box>
-      {/* Refresh Indicator */}
       {isRefreshing && (
         <Box textAlign="center" mb={4}>
           <Flex justify="center" align="center" gap={2}>
@@ -116,7 +115,6 @@ const fetchTodos = async (showRefreshLoading = false) => {
         </Box>
       )}
 
-      {/* Statistics */}
       {totalTodos > 0 && (
         <Box mb={6}>
           <Flex justify="center" gap={4} mb={4}>
@@ -133,7 +131,6 @@ const fetchTodos = async (showRefreshLoading = false) => {
         </Box>
       )}
 
-      {/* Todo List */}
       {totalTodos === 0 ? (
         <Box textAlign="center" py={12}>
           <Text fontSize="lg" color="gray.500" mb={2}>
@@ -144,8 +141,7 @@ const fetchTodos = async (showRefreshLoading = false) => {
           </Text>
         </Box>
       ) : (
-        <VStack spaceX={3} align="stretch">
-          {/* Pending todos first */}
+        <VStack spaceX={4} align="stretch">
           {todos
             .filter(todo => !todo.completed)
             .map(todo => (
@@ -157,7 +153,6 @@ const fetchTodos = async (showRefreshLoading = false) => {
               />
             ))}
           
-          {/* Completed todos with spacing */}
           {completedTodos > 0 && pendingTodos > 0 && (
             <Box py={2}>
               <Text fontSize="sm" color="gray.400" textAlign="center">
@@ -183,6 +178,3 @@ const fetchTodos = async (showRefreshLoading = false) => {
 };
 
 export default TodoList;
-
-// Export functions for parent components
-// export { TodoList as default, type Todo };

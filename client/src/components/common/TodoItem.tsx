@@ -1,7 +1,5 @@
 import { Box, Button, Flex, Text } from "@chakra-ui/react";
 import React, { useState } from "react";
-import { FiTrash2 } from "react-icons/fi";
-import { IoCheckmarkDone } from "react-icons/io5";
 
 interface Todo {
   id: string;
