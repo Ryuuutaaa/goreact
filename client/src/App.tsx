@@ -1,11 +1,15 @@
-import { Button, Stack } from "@chakra-ui/react"
+import {  Container, Stack } from "@chakra-ui/react"
+import Navbar from "./components/common/Navbar"
 
 function App() {
 
   return (
     <>
     <Stack h="100vh">
-    <Button>heloow</Button>      
+      <Navbar />
+      <Container>
+        
+      </Container>
     </Stack>
     </>
   )
