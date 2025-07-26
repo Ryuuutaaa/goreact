@@ -158,9 +158,9 @@ func main() {
 	}))
 
 	app.Get("/api/todos", getTodos)
-	app.Post("/api/todos", createTodo)
-	app.Patch("/api/todos/:id", updateTodo)
-	app.Delete("/api/todos/:id", deleteTodo)
+	app.Post("/api/todos/create", createTodo)
+	app.Patch("/api/todos/update/:id", updateTodo)
+	app.Delete("/api/todos/delete/:id", deleteTodo)
 
 	port := os.Getenv("PORT")
 	if port == "" {
