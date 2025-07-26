@@ -1,123 +1,188 @@
-import { Flex, Spinner, Stack, Text } from "@chakra-ui/react";
-
+import { Box, Flex, Spinner, Text, VStack, Badge } from "@chakra-ui/react";
+import React, { useEffect, useState } from "react";
 import TodoItem from "./TodoItem";
-import { useQuery } from "@tanstack/react-query";
-import { BASE_URL } from "../App";
 
-export type Todo = {
-	_id: number;
-	body: string;
-	completed: boolean;
+interface Todo {
+  id: string;
+  body: string;
+  completed: boolean;
+}
+
+const TodoList: React.FC = () => {
+  const [todos, setTodos] = useState<Todo[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string>("");
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Fetch todos from backend
+const fetchTodos = async (showRefreshLoading = false) => {
+  try {
+    if (showRefreshLoading) {
+      setIsRefreshing(true);
+    } else {
+      setIsLoading(true);
+    }
+    setError("");
+    
+    const res = await fetch("http://localhost:5000/api/todos");
+    
+    if (!res.ok) {
+      throw new Error(`Failed to fetch: ${res.statusText}`);
+    }
+    
+    const data = await res.json();
+    setTodos(data || []);
+  } catch (error) {
+    console.error("Error fetching todos:", error);
+    setError(`Failed to connect to server. Please make sure backend is running. Details: ${(error as Error).message}`);
+  } finally {
+    setIsLoading(false);
+    setIsRefreshing(false);
+  }
 };
 
-const TodoList = () => {
-	const { data: todos, isLoading } = useQuery<Todo[]>({
-		queryKey: ["todos"],
-		queryFn: async () => {
-			try {
-				const res = await fetch(BASE_URL + "/todos");
-				const data = await res.json();
+  // Load todos on component mount
+  useEffect(() => {
+    fetchTodos(false);
+  }, []);
 
-				if (!res.ok) {
-					throw new Error(data.error || "Something went wrong");
-				}
-				return data || [];
-			} catch (error) {
-				console.log(error);
-			}
-		},
-	});
+  // Handle todo update (mark as completed)
+  const handleTodoUpdate = (id: string) => {
+    setTodos(prevTodos =>
+      prevTodos.map(todo =>
+        todo.id === id ? { ...todo, completed: true } : todo
+      )
+    );
+  };
 
-	return (
-		<>
-			<Text
-				fontSize={"4xl"}
-				textTransform={"uppercase"}
-				fontWeight={"bold"}
-				textAlign={"center"}
-				my={2}
-				bgGradient='linear(to-l, #0b85f8, #00ffff)'
-				bgClip='text'
-			>
-				Today's Tasks
-			</Text>
-			{isLoading && (
-				<Flex justifyContent={"center"} my={4}>
-					<Spinner size={"xl"} />
-				</Flex>
-			)}
-			{!isLoading && todos?.length === 0 && (
-				<Stack alignItems={"center"} gap='3'>
-					<Text fontSize={"xl"} textAlign={"center"} color={"gray.500"}>
-						All tasks completed! 🤞
-					</Text>
-					<img src='/go.png' alt='Go logo' width={70} height={70} />
-				</Stack>
-			)}
-			<Stack gap={3}>
-				{todos?.map((todo) => (
-					<TodoItem key={todo._id} todo={todo} />
-				))}
-			</Stack>
-		</>
-	);
+  // Handle todo deletion
+  const handleTodoDelete = (id: string) => {
+    setTodos(prevTodos => prevTodos.filter(todo => todo.id !== id));
+  };
+
+  // Add new todo to state (for parent component)
+  const addTodoToState = (newTodo: Todo) => {
+    setTodos(prevTodos => [...prevTodos, newTodo]);
+  };
+
+  // Optimized refresh function
+  const refreshTodos = async () => {
+    if (isRefreshing || isLoading) return; // Prevent multiple simultaneous refreshes
+    await fetchTodos(true);
+  };
+
+  // Calculate statistics
+  const totalTodos = todos.length;
+  const completedTodos = todos.filter(todo => todo.completed).length;
+  const pendingTodos = totalTodos - completedTodos;
+
+  // Loading state
+  if (isLoading && !isRefreshing) {
+    return (
+      <Box textAlign="center" py={8}>
+        <Spinner size="lg" color="blue.500" />
+        <Text mt={2} color="gray.600">
+          Memuat todos...
+        </Text>
+      </Box>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <Box textAlign="center" py={8}>
+        <Text color="red.500" fontSize="lg" mb={2}>
+          Error memuat todos
+        </Text>
+        <Text color="gray.600" fontSize="sm">
+          {error}
+        </Text>
+      </Box>
+    );
+  }
+
+  return (
+    <Box>
+      {/* Refresh Indicator */}
+      {isRefreshing && (
+        <Box textAlign="center" mb={4}>
+          <Flex justify="center" align="center" gap={2}>
+            <Spinner size="sm" color="blue.500" />
+            <Text fontSize="sm" color="blue.500">
+              Memperbarui...
+            </Text>
+          </Flex>
+        </Box>
+      )}
+
+      {/* Statistics */}
+      {totalTodos > 0 && (
+        <Box mb={6}>
+          <Flex justify="center" gap={4} mb={4}>
+            <Badge colorScheme="blue" fontSize="sm" px={3} py={1} borderRadius="full">
+              Total: {totalTodos}
+            </Badge>
+            <Badge colorScheme="green" fontSize="sm" px={3} py={1} borderRadius="full">
+              Selesai: {completedTodos}
+            </Badge>
+            <Badge colorScheme="orange" fontSize="sm" px={3} py={1} borderRadius="full">
+              Pending: {pendingTodos}
+            </Badge>
+          </Flex>
+        </Box>
+      )}
+
+      {/* Todo List */}
+      {totalTodos === 0 ? (
+        <Box textAlign="center" py={12}>
+          <Text fontSize="lg" color="gray.500" mb={2}>
+            Belum ada todo yang dibuat
+          </Text>
+          <Text fontSize="sm" color="gray.400">
+            Tambahkan todo pertama Anda di atas!
+          </Text>
+        </Box>
+      ) : (
+        <VStack spaceX={3} align="stretch">
+          {/* Pending todos first */}
+          {todos
+            .filter(todo => !todo.completed)
+            .map(todo => (
+              <TodoItem
+                key={todo.id}
+                todo={todo}
+                onTodoUpdate={handleTodoUpdate}
+                onTodoDelete={handleTodoDelete}
+              />
+            ))}
+          
+          {/* Completed todos with spacing */}
+          {completedTodos > 0 && pendingTodos > 0 && (
+            <Box py={2}>
+              <Text fontSize="sm" color="gray.400" textAlign="center">
+                — Selesai —
+              </Text>
+            </Box>
+          )}
+          
+          {todos
+            .filter(todo => todo.completed)
+            .map(todo => (
+              <TodoItem
+                key={todo.id}
+                todo={todo}
+                onTodoUpdate={handleTodoUpdate}
+                onTodoDelete={handleTodoDelete}
+              />
+            ))}
+        </VStack>
+      )}
+    </Box>
+  );
 };
+
 export default TodoList;
 
-// STARTER CODE:
-
-// import { Flex, Spinner, Stack, Text } from "@chakra-ui/react";
-// import { useState } from "react";
-// import TodoItem from "./TodoItem";
-
-// const TodoList = () => {
-// 	const [isLoading, setIsLoading] = useState(true);
-// 	const todos = [
-// 		{
-// 			_id: 1,
-// 			body: "Buy groceries",
-// 			completed: true,
-// 		},
-// 		{
-// 			_id: 2,
-// 			body: "Walk the dog",
-// 			completed: false,
-// 		},
-// 		{
-// 			_id: 3,
-// 			body: "Do laundry",
-// 			completed: false,
-// 		},
-// 		{
-// 			_id: 4,
-// 			body: "Cook dinner",
-// 			completed: true,
-// 		},
-// 	];
-// 	return (
-// 		<>
-// 			<Text fontSize={"4xl"} textTransform={"uppercase"} fontWeight={"bold"} textAlign={"center"} my={2}>
-// 				Today's Tasks
-// 			</Text>
-// 			{isLoading && (
-// 				<Flex justifyContent={"center"} my={4}>
-// 					<Spinner size={"xl"} />
-// 				</Flex>
-// 			)}
-// 			{!isLoading && todos?.length === 0 && (
-// 				<Stack alignItems={"center"} gap='3'>
-// 					<Text fontSize={"xl"} textAlign={"center"} color={"gray.500"}>
-// 						All tasks completed! 🤞
-// 					</Text>
-// 					<img src='/go.png' alt='Go logo' width={70} height={70} />
-// 				</Stack>
-// 			)}
-// 			<Stack gap={3}>
-// 				{todos?.map((todo) => (
-// 					<TodoItem key={todo._id} todo={todo} />
-// 				))}
-// 			</Stack>
-// 		</>
-// 	);
-// };
-// export default TodoList;
+// Export functions for parent components
+// export { TodoList as default, type Todo };

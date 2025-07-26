@@ -151,9 +151,9 @@ func main() {
 	app := fiber.New()
 
 	app.Use(cors.New(cors.Config{
-		AllowOrigins:     "http://localhost:5000",
+		AllowOrigins:     "http://localhost:5173", // Sesuaikan dengan port frontend
 		AllowMethods:     "GET,POST,PATCH,DELETE,OPTIONS",
-		AllowHeaders:     "Origin, Content-Type, Accept, Authorization",
+		AllowHeaders:     "Origin, Content-Type, Accept",
 		AllowCredentials: true,
 	}))
 

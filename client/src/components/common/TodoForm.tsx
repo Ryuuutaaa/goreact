@@ -19,7 +19,7 @@ const TodoForm = () => {
     setMessage("")
 
     try {
-      const res = await fetch("http://localhost:5000/api/todos", {
+      const res = await fetch("http://localhost:5000/api/todos/create", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

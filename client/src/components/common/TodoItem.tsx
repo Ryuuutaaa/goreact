@@ -1,143 +1,149 @@
-import { Badge, Box, Flex, Spinner, Text } from "@chakra-ui/react";
-import { FaCheckCircle } from "react-icons/fa";
-import { MdDelete } from "react-icons/md";
-import { Todo } from "./TodoList";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { BASE_URL } from "../App";
+import { Box, Button, Flex, Text } from "@chakra-ui/react";
+import React, { useState } from "react";
+import { FiTrash2 } from "react-icons/fi";
+import { IoCheckmarkDone } from "react-icons/io5";
 
-const TodoItem = ({ todo }: { todo: Todo }) => {
-	const queryClient = useQueryClient();
+interface Todo {
+  id: string;
+  body: string;
+  completed: boolean;
+}
 
-	const { mutate: updateTodo, isPending: isUpdating } = useMutation({
-		mutationKey: ["updateTodo"],
-		mutationFn: async () => {
-			if (todo.completed) return alert("Todo is already completed");
-			try {
-				const res = await fetch(BASE_URL + `/todos/${todo._id}`, {
-					method: "PATCH",
-				});
-				const data = await res.json();
-				if (!res.ok) {
-					throw new Error(data.error || "Something went wrong");
-				}
-				return data;
-			} catch (error) {
-				console.log(error);
-			}
-		},
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["todos"] });
-		},
+interface TodoItemProps {
+  todo: Todo;
+  onTodoUpdate: (id: string) => void;
+  onTodoDelete: (id: string) => void;
+}
+
+const TodoItem: React.FC<TodoItemProps> = ({ todo, onTodoUpdate, onTodoDelete }) => {
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [message, setMessage] = useState("");
+
+  const handleToggleComplete = async () => {
+    if (todo.completed) {
+      setMessage("Todo sudah selesai");
+      setTimeout(() => setMessage(""), 3000);
+      return;
+    }
+
+    setIsUpdating(true);
+    setMessage("");
+    
+    try {
+      const res = await fetch(`http://localhost:5000/api/todos/${todo.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Gagal mengupdate todo");
+      }
+
+      onTodoUpdate(todo.id);
+      setMessage("Todo berhasil diselesaikan!");
+      setTimeout(() => setMessage(""), 3000);
+    } catch (error) {
+      console.error("Error updating todo:", error);
+      setMessage(`Error: ${(error as Error).message}`);
+      setTimeout(() => setMessage(""), 5000);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    setMessage("");
+    
+    try {
+    const res = await fetch(`http://localhost:5000/api/todos/update/${todo.id}`, {
+		method: "DELETE",
 	});
 
-	const { mutate: deleteTodo, isPending: isDeleting } = useMutation({
-		mutationKey: ["deleteTodo"],
-		mutationFn: async () => {
-			try {
-				const res = await fetch(BASE_URL + `/todos/${todo._id}`, {
-					method: "DELETE",
-				});
-				const data = await res.json();
-				if (!res.ok) {
-					throw new Error(data.error || "Something went wrong");
-				}
-				return data;
-			} catch (error) {
-				console.log(error);
-			}
-		},
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["todos"] });
-		},
-	});
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Gagal menghapus todo");
+      }
 
-	return (
-		<Flex gap={2} alignItems={"center"}>
-			<Flex
-				flex={1}
-				alignItems={"center"}
-				border={"1px"}
-				borderColor={"gray.600"}
-				p={2}
-				borderRadius={"lg"}
-				justifyContent={"space-between"}
-			>
-				<Text
-					color={todo.completed ? "green.200" : "yellow.100"}
-					textDecoration={todo.completed ? "line-through" : "none"}
-				>
-					{todo.body}
-				</Text>
-				{todo.completed && (
-					<Badge ml='1' colorScheme='green'>
-						Done
-					</Badge>
-				)}
-				{!todo.completed && (
-					<Badge ml='1' colorScheme='yellow'>
-						In Progress
-					</Badge>
-				)}
-			</Flex>
-			<Flex gap={2} alignItems={"center"}>
-				<Box color={"green.500"} cursor={"pointer"} onClick={() => updateTodo()}>
-					{!isUpdating && <FaCheckCircle size={20} />}
-					{isUpdating && <Spinner size={"sm"} />}
-				</Box>
-				<Box color={"red.500"} cursor={"pointer"} onClick={() => deleteTodo()}>
-					{!isDeleting && <MdDelete size={25} />}
-					{isDeleting && <Spinner size={"sm"} />}
-				</Box>
-			</Flex>
-		</Flex>
-	);
+      onTodoDelete(todo.id);
+      setMessage("Todo berhasil dihapus!");
+    } catch (error) {
+      console.error("Error deleting todo:", error);
+      setMessage(`Error: ${(error as Error).message}`);
+      setTimeout(() => setMessage(""), 5000);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  return (
+    <Box
+      p={4}
+      border="1px"
+      borderColor="gray.200"
+      borderRadius="md"
+      bg={todo.completed ? "green.50" : "white"}
+      shadow="sm"
+      _hover={{ shadow: "md" }}
+      transition="all 0.2s"
+    >
+      <Flex justify="space-between" align="center">
+        <Text
+          fontSize="md"
+          textDecoration={todo.completed ? "line-through" : "none"}
+          color={todo.completed ? "gray.500" : "gray.800"}
+          opacity={todo.completed ? 0.6 : 1}
+          flex="1"
+          mr={4}
+        >
+          {todo.body}
+        </Text>
+        
+        <Flex gap={2}>
+          <Button
+            size="sm"
+            colorScheme={todo.completed ? "gray" : "green"}
+            variant={todo.completed ? "ghost" : "solid"}
+            onClick={handleToggleComplete}
+            loading={isUpdating}
+            disabled={isUpdating || isDeleting}
+            // leftIcon={<IoCheckmarkDone />}
+          >
+            {todo.completed ? "Selesai" : "Tandai"}
+          </Button>
+          
+          <Button
+            size="sm"
+            colorScheme="red"
+            variant="outline"
+            onClick={handleDelete}
+            loading={isDeleting}
+            disabled={isUpdating || isDeleting}
+            // leftIcon={<FiTrash2 />}
+          >
+            Hapus
+          </Button>
+        </Flex>
+      </Flex>
+
+      {/* Message Display */}
+      {message && (
+        <Box mt={3} pt={3} borderTop="1px" borderColor="gray.100">
+          <Text 
+            fontSize="sm" 
+            color={message.includes("Error") ? "red.500" : "green.500"}
+            fontWeight="medium"
+          >
+            {message}
+          </Text>
+        </Box>
+      )}
+    </Box>
+  );
 };
+
 export default TodoItem;
-
-// STARTER CODE:
-
-// import { Badge, Box, Flex, Text } from "@chakra-ui/react";
-// import { FaCheckCircle } from "react-icons/fa";
-// import { MdDelete } from "react-icons/md";
-
-// const TodoItem = ({ todo }: { todo: any }) => {
-// 	return (
-// 		<Flex gap={2} alignItems={"center"}>
-// 			<Flex
-// 				flex={1}
-// 				alignItems={"center"}
-// 				border={"1px"}
-// 				borderColor={"gray.600"}
-// 				p={2}
-// 				borderRadius={"lg"}
-// 				justifyContent={"space-between"}
-// 			>
-// 				<Text
-// 					color={todo.completed ? "green.200" : "yellow.100"}
-// 					textDecoration={todo.completed ? "line-through" : "none"}
-// 				>
-// 					{todo.body}
-// 				</Text>
-// 				{todo.completed && (
-// 					<Badge ml='1' colorScheme='green'>
-// 						Done
-// 					</Badge>
-// 				)}
-// 				{!todo.completed && (
-// 					<Badge ml='1' colorScheme='yellow'>
-// 						In Progress
-// 					</Badge>
-// 				)}
-// 			</Flex>
-// 			<Flex gap={2} alignItems={"center"}>
-// 				<Box color={"green.500"} cursor={"pointer"}>
-// 					<FaCheckCircle size={20} />
-// 				</Box>
-// 				<Box color={"red.500"} cursor={"pointer"}>
-// 					<MdDelete size={25} />
-// 				</Box>
-// 			</Flex>
-// 		</Flex>
-// 	);
-// };
-// export default TodoItem;
