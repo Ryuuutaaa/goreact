@@ -11,10 +11,10 @@ interface Todo {
 }
 
 function App() {
-  const [todos, setTodos] = useState<Todo[]>([]);
+    const [todos, setTodos] = useState<Todo[]>([]);
 
   const handleTodoCreated = (newTodo: Todo) => {
-    setTodos(prevTodos => [newTodo, ...prevTodos]);
+    setTodos(prevTodos => [newTodo, ...prevTodos]); 
   };
 
   return (
@@ -22,8 +22,11 @@ function App() {
       <Stack h="100vh">
         <Navbar />
         <Container>
-          <TodoForm onTodoCreated={handleTodoCreated} />
-          <TodoList todos={todos} setTodos={setTodos} />
+           {/* PERBAIKAN: Pass handler ke TodoForm */}
+        <TodoForm onTodoCreated={handleTodoCreated} />
+        
+        {/* Pass todos state dan setter ke TodoList */}
+        <TodoList todos={todos} setTodos={setTodos} />
         </Container>
       </Stack>
     </>

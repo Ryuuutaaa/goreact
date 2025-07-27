@@ -42,16 +42,22 @@ const createTodo = async (e: React.FormEvent) => {
     });
 
     if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.error || `HTTP error! status: ${res.status}`);
-    }
+       let errorMessage = "Gagal menambahkan todo"
+	   try{
+			const errorData = await res.json();
+			errorMessage = errorData.error || errorMessage;
+	   }catch (err) {
+		errorMessage = `HTTP ${res.status} : ${res.statusText}`
 
+	   }
+      }
     const createdTodo = await res.json();
     setMessage("Berhasil menambahkan todo");
     setNewTodo("");
     
-    // Panggil callback untuk mengupdate state di parent component
-    onTodoCreated(createdTodo);
+      onTodoCreated(createdTodo);
+      
+      setTimeout(() => setMessage(""), 3000);
     
   } catch (err) {
     console.error("Error creating todo:", err);
