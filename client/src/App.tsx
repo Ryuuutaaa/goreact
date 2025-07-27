@@ -22,10 +22,8 @@ function App() {
       <Stack h="100vh">
         <Navbar />
         <Container>
-           {/* PERBAIKAN: Pass handler ke TodoForm */}
         <TodoForm onTodoCreated={handleTodoCreated} />
         
-        {/* Pass todos state dan setter ke TodoList */}
         <TodoList todos={todos} setTodos={setTodos} />
         </Container>
       </Stack>
