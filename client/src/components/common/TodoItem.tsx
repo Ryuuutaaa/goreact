@@ -29,7 +29,7 @@ const TodoItem: React.FC<TodoItemProps> = ({ todo, onTodoUpdate, onTodoDelete })
     setMessage("");
     
     try {
-      const res = await fetch(`http://localhost:5000/api/todos/${todo.id}`, {
+      const res = await fetch(`http://localhost:5000/api/todos/update/${todo.id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -37,8 +37,14 @@ const TodoItem: React.FC<TodoItemProps> = ({ todo, onTodoUpdate, onTodoDelete })
       });
 
       if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Gagal mengupdate todo");
+       let errorMessage = "Gagal mengupdate tood"
+	   try{
+			const errorData = await res.json();
+			errorMessage = errorData.error || errorMessage;
+	   }catch (err) {
+		errorMessage = `HTTP ${res.status} : ${res.statusText}`
+
+	   }
       }
 
       onTodoUpdate(todo.id);
@@ -58,13 +64,19 @@ const TodoItem: React.FC<TodoItemProps> = ({ todo, onTodoUpdate, onTodoDelete })
     setMessage("");
     
     try {
-    const res = await fetch(`http://localhost:5000/api/todos/update/${todo.id}`, {
+    const res = await fetch(`http://localhost:5000/api/todos/delete/${todo.id}`, {
 		method: "DELETE",
 	});
 
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Gagal menghapus todo");
+       if (!res.ok) {
+       let errorMessage = "Gagal menghapus tood"
+	   try{
+			const errorData = await res.json();
+			errorMessage = errorData.error || errorMessage;
+	   }catch (err) {
+		errorMessage = `HTTP ${res.status} : ${res.statusText}`
+
+	   }
       }
 
       onTodoDelete(todo.id);
@@ -109,7 +121,6 @@ const TodoItem: React.FC<TodoItemProps> = ({ todo, onTodoUpdate, onTodoDelete })
             onClick={handleToggleComplete}
             loading={isUpdating}
             disabled={isUpdating || isDeleting}
-            // leftIcon={<IoCheckmarkDone />}
           >
             {todo.completed ? "Selesai" : "Tandai"}
           </Button>
@@ -121,14 +132,12 @@ const TodoItem: React.FC<TodoItemProps> = ({ todo, onTodoUpdate, onTodoDelete })
             onClick={handleDelete}
             loading={isDeleting}
             disabled={isUpdating || isDeleting}
-            // leftIcon={<FiTrash2 />}
           >
             Hapus
           </Button>
         </Flex>
       </Flex>
 
-      {/* Message Display */}
       {message && (
         <Box mt={3} pt={3} borderTop="1px" borderColor="gray.100">
           <Text 
