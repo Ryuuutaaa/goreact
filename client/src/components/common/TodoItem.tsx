@@ -2,6 +2,8 @@ import {
   Box, Button, Flex, Text, Badge 
 } from "@chakra-ui/react";
 import { useState } from "react";
+import { BiTrash } from "react-icons/bi";
+import { MdDoneAll } from "react-icons/md";
 
 interface Todo {
   id: string;
@@ -141,7 +143,7 @@ const TodoItem: React.FC<TodoItemProps> = ({ todo, onTodoUpdate, onTodoDelete })
               size="sm"
               // leftIcon={<span>✓</span>}
             >
-              Complete
+              < MdDoneAll />
             </Button>
           )}
           
@@ -155,7 +157,7 @@ const TodoItem: React.FC<TodoItemProps> = ({ todo, onTodoUpdate, onTodoDelete })
             size="sm"
             // leftIcon={<span>×</span>}
           >
-            Delete
+            <BiTrash />
           </Button>
         </Flex>
       </Flex>
@@ -178,7 +180,13 @@ const TodoItem: React.FC<TodoItemProps> = ({ todo, onTodoUpdate, onTodoDelete })
           borderTop="1px dashed" 
           borderColor="gray.200"
           fontSize="sm"
-          color={message.startsWith("Error") ? "red.500" : "green.500"}
+          color={
+            message === "Todo cannot be empty"
+              ? "orange.500"
+              : message.startsWith("Error")
+          ? "red.500"
+          : "green.500"
+          }
         >
           {message}
         </Box>

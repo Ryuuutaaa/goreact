@@ -2,6 +2,7 @@ import {
   Button, Flex, Input, Box, Text 
 } from "@chakra-ui/react";
 import { useState } from "react";
+import { BiPlusCircle } from "react-icons/bi";
 
 interface Todo {
   id: string;
@@ -78,7 +79,6 @@ const TodoForm: React.FC<TodoFormProps> = ({ onTodoCreated }) => {
             placeholder="What needs to be done?"
             variant="flushed"
             focusRing="blue.500"
-            _hover={{ bg: "gray.100" }}
           />
           <Button
             type="submit"
@@ -89,7 +89,7 @@ const TodoForm: React.FC<TodoFormProps> = ({ onTodoCreated }) => {
             px={6}
             // leftIcon={<span>+</span>}
           >
-            Add
+            < BiPlusCircle />
           </Button>
         </Flex>
       </form>
@@ -97,7 +97,13 @@ const TodoForm: React.FC<TodoFormProps> = ({ onTodoCreated }) => {
       {message && (
         <Text 
           mt={2}
-          color={message.startsWith("Error") ? "red.500" : "green.500"}
+          color={
+            message === "Todo cannot be empty"
+              ? "orange.400"
+              : message.startsWith("Error")
+              ? "red.500"
+              : "green.500"
+          }
           fontSize="sm"
           textAlign="center"
         >

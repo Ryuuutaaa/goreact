@@ -180,7 +180,6 @@ const TodoList: React.FC<TodoListProps> = ({ todos, setTodos }) => {
         </Box>
       ) : (
         <VStack spaceX={3} align="stretch">
-          {/* Pending Todos */}
           {todos
             .filter(todo => !todo.completed)
             .map(todo => (
@@ -192,7 +191,6 @@ const TodoList: React.FC<TodoListProps> = ({ todos, setTodos }) => {
               />
             ))}
           
-          {/* Completed Todos Section */}
           {completedTodos > 0 && (
             <>
               <Flex 
