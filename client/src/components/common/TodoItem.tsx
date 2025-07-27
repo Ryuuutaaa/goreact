@@ -1,5 +1,7 @@
-import { Box, Button, Flex, Text } from "@chakra-ui/react";
-import React, { useState } from "react";
+import { 
+  Box, Button, Flex, Text, Badge 
+} from "@chakra-ui/react";
+import { useState } from "react";
 
 interface Todo {
   id: string;
@@ -20,7 +22,7 @@ const TodoItem: React.FC<TodoItemProps> = ({ todo, onTodoUpdate, onTodoDelete })
 
   const handleToggleComplete = async () => {
     if (todo.completed) {
-      setMessage("Todo sudah selesai");
+      setMessage("Todo already completed");
       setTimeout(() => setMessage(""), 3000);
       return;
     }
@@ -37,18 +39,18 @@ const TodoItem: React.FC<TodoItemProps> = ({ todo, onTodoUpdate, onTodoDelete })
       });
 
       if (!res.ok) {
-       let errorMessage = "Gagal mengupdate tood"
-	   try{
-			const errorData = await res.json();
-			errorMessage = errorData.error || errorMessage;
-	   }catch (err) {
-		errorMessage = `HTTP ${res.status} : ${res.statusText}`
-
-	   }
+        let errorMessage = "Failed to update todo";
+        try {
+          const errorData = await res.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch (err) {
+          errorMessage = `HTTP ${res.status} : ${res.statusText}`;
+        }
+        throw new Error(errorMessage);
       }
 
       onTodoUpdate(todo.id);
-      setMessage("Todo berhasil diselesaikan!");
+      setMessage("Todo marked as completed!");
       setTimeout(() => setMessage(""), 3000);
     } catch (error) {
       console.error("Error updating todo:", error);
@@ -64,23 +66,23 @@ const TodoItem: React.FC<TodoItemProps> = ({ todo, onTodoUpdate, onTodoDelete })
     setMessage("");
     
     try {
-    const res = await fetch(`http://localhost:5000/api/todos/delete/${todo.id}`, {
-		method: "DELETE",
-	});
+      const res = await fetch(`http://localhost:5000/api/todos/delete/${todo.id}`, {
+        method: "DELETE",
+      });
 
-       if (!res.ok) {
-       let errorMessage = "Gagal menghapus tood"
-	   try{
-			const errorData = await res.json();
-			errorMessage = errorData.error || errorMessage;
-	   }catch (err) {
-		errorMessage = `HTTP ${res.status} : ${res.statusText}`
-
-	   }
+      if (!res.ok) {
+        let errorMessage = "Failed to delete todo";
+        try {
+          const errorData = await res.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch (err) {
+          errorMessage = `HTTP ${res.status} : ${res.statusText}`;
+        }
+        throw new Error(errorMessage);
       }
 
       onTodoDelete(todo.id);
-      setMessage("Todo berhasil dihapus!");
+      setMessage("Todo deleted successfully!");
     } catch (error) {
       console.error("Error deleting todo:", error);
       setMessage(`Error: ${(error as Error).message}`);
@@ -94,59 +96,91 @@ const TodoItem: React.FC<TodoItemProps> = ({ todo, onTodoUpdate, onTodoDelete })
     <Box
       p={4}
       border="1px"
-      borderColor="gray.200"
-      borderRadius="md"
+      borderColor={todo.completed ? "green.200" : "gray.200"}
+      borderRadius="lg"
       bg={todo.completed ? "green.50" : "white"}
-      shadow="sm"
-      _hover={{ shadow: "md" }}
+      boxShadow="sm"
+      _hover={{ boxShadow: "md" }}
       transition="all 0.2s"
+      position="relative"
     >
-      <Flex justify="space-between" align="center">
+      {todo.completed && (
+        <Badge 
+          colorScheme="green" 
+          position="absolute" 
+          top={-2} 
+          right={-2}
+          borderRadius="full"
+          px={2}
+          boxShadow="sm"
+        >
+          Done
+        </Badge>
+      )}
+      
+      <Flex justify="space-between" align="center" gap={3}>
         <Text
-          fontSize="md"
+          fontSize="lg"
+          fontWeight={todo.completed ? "medium" : "semibold"}
           textDecoration={todo.completed ? "line-through" : "none"}
-          color={todo.completed ? "gray.500" : "gray.800"}
-          opacity={todo.completed ? 0.6 : 1}
+          color={todo.completed ? "gray.500" : "gray.700"}
           flex="1"
-          mr={4}
         >
           {todo.body}
         </Text>
         
         <Flex gap={2}>
-          <Button
-            size="sm"
-            colorScheme={todo.completed ? "gray" : "green"}
-            variant={todo.completed ? "ghost" : "solid"}
-            onClick={handleToggleComplete}
-            loading={isUpdating}
-            disabled={isUpdating || isDeleting}
-          >
-            {todo.completed ? "Selesai" : "Tandai"}
-          </Button>
+          {!todo.completed && (
+            <Button
+              aria-label="Complete todo"
+              colorScheme="green"
+              variant="outline"
+              onClick={handleToggleComplete}
+              loading={isUpdating}
+              disabled={isDeleting}
+              size="sm"
+              // leftIcon={<span>✓</span>}
+            >
+              Complete
+            </Button>
+          )}
           
           <Button
-            size="sm"
+            aria-label="Delete todo"
             colorScheme="red"
-            variant="outline"
+            variant="ghost"
             onClick={handleDelete}
             loading={isDeleting}
-            disabled={isUpdating || isDeleting}
+            disabled={isUpdating}
+            size="sm"
+            // leftIcon={<span>×</span>}
           >
-            Hapus
+            Delete
           </Button>
         </Flex>
       </Flex>
+      
+      {!todo.completed && (
+        <Flex mt={2} align="center">
+          <Text fontSize="xs" color="orange.500" mr={1}>
+            ⏳
+          </Text>
+          <Text fontSize="xs" color="orange.500">
+            Pending
+          </Text>
+        </Flex>
+      )}
 
       {message && (
-        <Box mt={3} pt={3} borderTop="1px" borderColor="gray.100">
-          <Text 
-            fontSize="sm" 
-            color={message.includes("Error") ? "red.500" : "green.500"}
-            fontWeight="medium"
-          >
-            {message}
-          </Text>
+        <Box 
+          mt={2} 
+          pt={2} 
+          borderTop="1px dashed" 
+          borderColor="gray.200"
+          fontSize="sm"
+          color={message.startsWith("Error") ? "red.500" : "green.500"}
+        >
+          {message}
         </Box>
       )}
     </Box>

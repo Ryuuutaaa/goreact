@@ -1,6 +1,10 @@
-import { Box, Flex, Spinner, Text, VStack, Badge, Button } from "@chakra-ui/react";
-import React, { useEffect, useState } from "react";
+import { 
+  Box, Flex, Spinner, Text, VStack, Badge, Button, 
+  useDisclosure,
+  Collapsible,   
+} from "@chakra-ui/react";
 import TodoItem from "./TodoItem";
+import { useEffect, useState } from "react";
 
 interface Todo {
   id: string;
@@ -17,6 +21,8 @@ const TodoList: React.FC<TodoListProps> = ({ todos, setTodos }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>("");
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [message, setMessage] = useState("");
+  const { open: showCompleted, onToggle: toggleCompleted } = useDisclosure({ defaultOpen: false });
 
   const fetchTodos = async (showRefreshLoading = false) => {
     try {
@@ -26,6 +32,7 @@ const TodoList: React.FC<TodoListProps> = ({ todos, setTodos }) => {
         setIsLoading(true);
       }
       setError("");
+      setMessage("");
       
       const res = await fetch("http://localhost:5000/api/todos");
       
@@ -35,9 +42,14 @@ const TodoList: React.FC<TodoListProps> = ({ todos, setTodos }) => {
       
       const data = await res.json();
       setTodos(data || []);
+      if (showRefreshLoading) {
+        setMessage("Todos refreshed successfully!");
+        setTimeout(() => setMessage(""), 3000);
+      }
     } catch (error) {
       console.error("Error fetching todos:", error);
-      setError(`Failed to connect to server. Please make sure backend is running. Details: ${(error as Error).message}`);
+      setError(`Failed to connect to server. ${(error as Error).message}`);
+      setMessage("");
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -71,10 +83,10 @@ const TodoList: React.FC<TodoListProps> = ({ todos, setTodos }) => {
 
   if (isLoading && !isRefreshing) {
     return (
-      <Box textAlign="center" py={8}>
-        <Spinner size="lg" color="blue.500" />
-        <Text mt={2} color="gray.600">
-          Memuat todos...
+      <Box textAlign="center" py={12}>
+        <Spinner size="xl"  color="blue.500" />
+        <Text mt={4} fontSize="lg" color="gray.600">
+          Loading your todos...
         </Text>
       </Box>
     );
@@ -82,21 +94,20 @@ const TodoList: React.FC<TodoListProps> = ({ todos, setTodos }) => {
 
   if (error) {
     return (
-      <Box textAlign="center" py={8}>
-        <Text color="red.500" fontSize="lg" mb={2}>
-          Error memuat todos
+      <Box textAlign="center" py={12} px={4}>
+        <Text color="red.500" fontSize="xl" mb={3} fontWeight="semibold">
+          Failed to load todos
         </Text>
-        <Text color="gray.600" fontSize="sm">
+        <Text color="gray.500" fontSize="md" mb={6}>
           {error}
         </Text>
         <Button 
-          mt={4} 
           colorScheme="blue" 
-          size="sm"
           onClick={refreshTodos}
           loading={isRefreshing}
+          size="lg"
         >
-          Coba Lagi
+          Refresh
         </Button>
       </Box>
     );
@@ -104,44 +115,72 @@ const TodoList: React.FC<TodoListProps> = ({ todos, setTodos }) => {
 
   return (
     <Box>
+      {message && (
+        <Box 
+          bg="green.100" 
+          color="green.800" 
+          p={3} 
+          mb={4} 
+          borderRadius="md"
+          textAlign="center"
+        >
+          {message}
+        </Box>
+      )}
+
+      <Flex justify="space-between" align="center" mb={6}>
+        <Flex gap={3}>
+          <Badge colorScheme="blue" fontSize="md" px={3} py={1} borderRadius="full">
+            Total: {totalTodos}
+          </Badge>
+          <Badge colorScheme="green" fontSize="md" px={3} py={1} borderRadius="full">
+            Done: {completedTodos}
+          </Badge>
+          <Badge colorScheme="orange" fontSize="md" px={3} py={1} borderRadius="full">
+            Pending: {pendingTodos}
+          </Badge>
+        </Flex>
+        
+        <Button
+          onClick={refreshTodos}
+          loading={isRefreshing}
+          variant="ghost"
+          size="sm"
+          // leftIcon={<span>↻</span>}
+        >
+          Refresh
+        </Button>
+      </Flex>
+
       {isRefreshing && (
         <Box textAlign="center" mb={4}>
           <Flex justify="center" align="center" gap={2}>
             <Spinner size="sm" color="blue.500" />
             <Text fontSize="sm" color="blue.500">
-              Memperbarui...
+              Refreshing todos...
             </Text>
           </Flex>
         </Box>
       )}
 
-      {totalTodos > 0 && (
-        <Box mb={6}>
-          <Flex justify="center" gap={4} mb={4}>
-            <Badge colorScheme="blue" fontSize="sm" px={3} py={1} borderRadius="full">
-              Total: {totalTodos}
-            </Badge>
-            <Badge colorScheme="green" fontSize="sm" px={3} py={1} borderRadius="full">
-              Selesai: {completedTodos}
-            </Badge>
-            <Badge colorScheme="orange" fontSize="sm" px={3} py={1} borderRadius="full">
-              Pending: {pendingTodos}
-            </Badge>
-          </Flex>
-        </Box>
-      )}
-
       {totalTodos === 0 ? (
-        <Box textAlign="center" py={12}>
-          <Text fontSize="lg" color="gray.500" mb={2}>
-            Belum ada todo yang dibuat
+        <Box 
+          textAlign="center" 
+          py={12} 
+          border="2px dashed" 
+          borderColor="gray.200" 
+          borderRadius="lg"
+        >
+          <Text fontSize="xl" color="gray.500" mb={2} fontWeight="medium">
+            No todos yet
           </Text>
-          <Text fontSize="sm" color="gray.400">
-            Tambahkan todo pertama Anda di atas!
+          <Text fontSize="md" color="gray.400">
+            Add your first todo above!
           </Text>
         </Box>
       ) : (
-        <VStack spaceX={4} align="stretch">
+        <VStack spaceX={3} align="stretch">
+          {/* Pending Todos */}
           {todos
             .filter(todo => !todo.completed)
             .map(todo => (
@@ -153,24 +192,38 @@ const TodoList: React.FC<TodoListProps> = ({ todos, setTodos }) => {
               />
             ))}
           
-          {completedTodos > 0 && pendingTodos > 0 && (
-            <Box py={2}>
-              <Text fontSize="sm" color="gray.400" textAlign="center">
-                — Selesai —
-              </Text>
-            </Box>
+          {/* Completed Todos Section */}
+          {completedTodos > 0 && (
+            <>
+              <Flex 
+                align="center" 
+                mt={6} 
+                mb={3} 
+                cursor="pointer"
+                onClick={toggleCompleted}
+              >
+                <Text fontSize="md" fontWeight="semibold" mr={2}>
+                  Completed ({completedTodos})
+                </Text>
+                {showCompleted ? <span>▲</span> : <span>▼</span>}
+              </Flex>
+              
+                {showCompleted && (
+                <VStack spaceX={3} align="stretch" mt={2}>
+                  {todos
+                  .filter(todo => todo.completed)
+                  .map(todo => (
+                    <TodoItem
+                    key={todo.id}
+                    todo={todo}
+                    onTodoUpdate={handleTodoUpdate}
+                    onTodoDelete={handleTodoDelete}
+                    />
+                  ))}
+                </VStack>
+                )}
+            </>
           )}
-          
-          {todos
-            .filter(todo => todo.completed)
-            .map(todo => (
-              <TodoItem
-                key={todo.id}
-                todo={todo}
-                onTodoUpdate={handleTodoUpdate}
-                onTodoDelete={handleTodoDelete}
-              />
-            ))}
         </VStack>
       )}
     </Box>
